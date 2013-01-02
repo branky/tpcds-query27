@@ -7,22 +7,22 @@ import org.apache.hadoop.io.*;
 public class Types
 {
   public final static class Stage_1_k implements WritableComparable {
-    int i_item_id;
+    String i_item_id;
     String s_state;
 
     public void write(DataOutput out) throws IOException {
-      out.writeInt(i_item_id);      
+      out.writeUTF(i_item_id);      
       out.writeUTF(s_state);
     }
 
     public void readFields(DataInput in) throws IOException {
-      i_item_id = in.readInt();
+      i_item_id = in.readUTF();
       s_state = in.readUTF();
     }
 
     public int compareTo(Stage_1_k o) {
       if(i_item_id != o.i_item_id) {
-        return Integer.valueOf(i_item_id).compareTo(o.i_item_id);
+        return i_item_id.compareTo(o.i_item_id);
       }
       return s_state.compareTo(o.s_state);
     }
@@ -30,6 +30,10 @@ public class Types
     @Override
     public int compareTo(Object o) {
       return compareTo((Stage_1_k)o);
+    }
+
+    public String toString() {
+      return i_item_id+"\t"+s_state;
     }
   }
 

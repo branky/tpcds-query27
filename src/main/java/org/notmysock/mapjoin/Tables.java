@@ -3,6 +3,7 @@ package org.notmysock.mapjoin;
 
 import java.io.*;
 import org.apache.hadoop.io.*;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.*;
 
@@ -30,6 +31,9 @@ public class Tables extends Utils {
         RecordReader<LongWritable, date_dim> reader =  new date_dim.Reader();
         reader.initialize(input, context);
         return reader;
+      }
+      protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
       }
     }
 
@@ -178,10 +182,11 @@ public class Tables extends Utils {
         String [] pieces = lineValue.toString().split("\\|");
 
         switch(pieces.length-1) {
-          case 0: value.cd_demo_sk = parseInt(pieces[0]);
-          case 1: value.cd_gender = pieces[1];
-          case 2: value.cd_marital_status = pieces[2];
+          default: 
           case 3: value.cd_education_status = pieces[3];
+          case 2: value.cd_marital_status = pieces[2];
+          case 1: value.cd_gender = pieces[1];
+          case 0: value.cd_demo_sk = parseInt(pieces[0]);
         }
         return true;
       }
@@ -198,6 +203,7 @@ public class Tables extends Utils {
 
   public static final class item {
     int i_item_sk;
+    String i_item_id;
     public static final class InputFormat 
       extends FileInputFormat<LongWritable, item> {      
       @Override
@@ -235,9 +241,9 @@ public class Tables extends Utils {
 
         key.set(lineKey.get());
         String [] pieces = lineValue.toString().split("\\|");
-
-        switch(pieces.length-1) {
-          case 0: value.i_item_sk = parseInt(pieces[0]);
+        if(pieces.length > 2) {
+          value.i_item_id = pieces[1];
+          value.i_item_sk = parseInt(pieces[0]);
         }
         return true;
       }
