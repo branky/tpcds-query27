@@ -111,7 +111,8 @@ public class Query27 extends Configured implements Tool {
 
     static final class ReduceAverager extends Reducer<Stage_1_k, Stage_1_v, Text, Text> {
       FileWriter l = null;
-      protected void reduce(Stage_1_k key, Iterator<Stage_1_v> values, Reducer.Context context) 
+      @Override
+      public void reduce(Stage_1_k key, Iterable<Stage_1_v> values, Context context) 
         throws IOException, InterruptedException {
         if(l == null) l = new FileWriter("/tmp/reducer.log");
         l.write(key.toString() + "\n");
