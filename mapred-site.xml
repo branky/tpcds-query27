@@ -4,7 +4,7 @@
          <value>yarn</value>
      </property>
      <property>
-         <name>mapred.job.tracker</name>
+         <name>mapreduce.job.tracker</name>
          <value>localhost:8088</value>
     </property>
    <!-- <property>
