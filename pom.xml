@@ -53,7 +53,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
 			  <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>org.notmysock.mapjoin.Query3</mainClass>
+              <mainClass>org.notmysock.mapjoin.Query27</mainClass>
             </manifest>
           </archive>
         </configuration>

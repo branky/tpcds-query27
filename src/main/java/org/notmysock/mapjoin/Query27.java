@@ -15,11 +15,11 @@ import java.io.*;
 import java.util.*;
 
 
-public class Query3 extends Configured implements Tool {
+public class Query27 extends Configured implements Tool {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         conf.setBoolean("mapreduce.job.committer.task.cleanup.needed", false);
-        int res = ToolRunner.run(conf, new Query3(), args);
+        int res = ToolRunner.run(conf, new Query27(), args);
         System.exit(res);
     }
 
@@ -28,7 +28,7 @@ public class Query3 extends Configured implements Tool {
         String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
 
         if (remainingArgs.length < 2) {
-            System.err.println("Usage: Query3 <in> <out>");
+            System.err.println("Usage: Query27 <in> <out>");
             ToolRunner.printGenericCommandUsage(System.err);
             return 1;
         }
