@@ -32,6 +32,7 @@ public class Tables extends Utils {
         reader.initialize(input, context);
         return reader;
       }
+      @Override
       protected boolean isSplitable(JobContext context, Path filename) {
         return false;
       }
@@ -91,6 +92,10 @@ public class Tables extends Utils {
         RecordReader<LongWritable, store> reader =  new store.Reader();
         reader.initialize(input, context);
         return reader;
+      }
+      @Override
+      protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
       }
     }
 
@@ -152,6 +157,10 @@ public class Tables extends Utils {
         reader.initialize(input, context);
         return reader;
       }
+      @Override
+      protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
+      }
     }
 
     public static final class Reader extends RecordReader<LongWritable,customer_demographics> {
@@ -212,6 +221,10 @@ public class Tables extends Utils {
         RecordReader<LongWritable, item> reader =  new item.Reader();
         reader.initialize(input, context);
         return reader;
+      }
+      @Override
+      protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
       }
     }
 
