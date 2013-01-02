@@ -1,0 +1,46 @@
+
+We are operating on the following raw tables
+
+struct date_dim { i32 d_date_sk, string d_date_id, timestamp d_date, i32 d_month_seq, i32 d_week_seq, i32 d_quarter_seq, i32 d_year, i32 d_dow, i32 d_moy, i32 d_dom, i32 d_qoy, i32 d_fy_year, i32 d_fy_quarter_seq, i32 d_fy_week_seq, string d_day_name, string d_quarter_name, string d_holiday, string d_weekend, string d_following_holiday, i32 d_first_dom, i32 d_last_dom, i32 d_same_day_ly, i32 d_same_day_lq, string d_current_day, string d_current_week, string d_current_month, string d_current_quarter, string d_current_year}
+
+struct store { i32 s_store_sk, string s_store_id, timestamp s_rec_start_date, timestamp s_rec_end_date, i32 s_closed_date_sk, string s_store_name, i32 s_number_employees, i32 s_floor_space, string s_hours, string s_manager, i32 s_market_id, string s_geography_class, string s_market_desc, string s_market_manager, i32 s_division_id, string s_division_name, i32 s_company_id, string s_company_name, string s_street_number, string s_street_name, string s_street_type, string s_suite_number, string s_city, string s_county, string s_state, string s_zip, string s_country, float s_gmt_offset, float s_tax_precentage} 
+
+struct customer_demographics { i32 cd_demo_sk, string cd_gender, string cd_marital_status, string cd_education_status, i32 cd_purchase_estimate, string cd_credit_rating, i32 cd_dep_count, i32 cd_dep_employed_count, i32 cd_dep_college_count} 
+
+struct item { i32 i_item_sk, string i_item_id, timestamp i_rec_start_date, timestamp i_rec_end_date, string i_item_desc, float i_current_price, float i_wholesale_cost, i32 i_brand_id, string i_brand, i32 i_class_id, string i_class, i32 i_category_id, string i_category, i32 i_manufact_id, string i_manufact, string i_size, string i_formulation, string i_color, string i_units, string i_container, i32 i_manager_id, string i_product_name}
+
+struct store_sales { i32 ss_sold_date_sk, i32 ss_sold_time_sk, i32 ss_item_sk, i32 ss_customer_sk, i32 ss_cdemo_sk, i32 ss_hdemo_sk, i32 ss_addr_sk, i32 ss_store_sk, i32 ss_promo_sk, i32 ss_ticket_number, i32 ss_quantity, float ss_wholesale_cost, float ss_list_price, float ss_sales_price, float ss_ext_discount_amt, float ss_ext_sales_price, float ss_ext_wholesale_cost, float ss_ext_list_price, float ss_ext_tax, float ss_coupon_amt, float ss_net_paid, float ss_net_paid_inc_tax, float ss_net_profit}
+
+
+In a simplified form, the map-join translates to 4 hash-tables created from the small tables
+
+date_dim = [{d_date_sk:true} for date_dim if d_year = 2002]
+customer_demographics = [{cd_demo_sk:true} for customer_demographics if (cd_gender = 'M' and cd_marital_status = 'S' and cd_education_status = 'College']
+item = [{i_item_sk:i_item_id} for item]
+store = [{s_store_sk:s_state} for s_state in ('TN', 'SD')]
+
+The format for these will be a primitive based hashtable, which will be used to store the primitives instead of storing container objects.
+
+This will be looped around a map-red where the map op is
+
+if(date_dim.containsKey(store_sales.ss_sold_date_sk) && 
+	customer_demographics.containsKey(store_sales.ss_c_demo_sk))
+{
+	i_item_id = item.get(store_sales.ss_item_sk);
+	s_state = store.get(store_sales.ss_store_sk);
+	if(i_item_id != null && s_state != null) {
+		stage_1_k.i_item_id = (int)i_item_id;
+		stage_1_k.s_state = (String)s_state;
+		stage_1_v.ss_quantity = store_sales.ss_quantity;
+		stage_1_v.ss_list_price = store_sales.ss_list_price;
+		stage_1_v.ss_coupon_amt = store_sales.ss_coupon_amt;
+		stage_1_v.ss_sales_price = store_sales.ss_sales_price;
+		collect(stage_1_k, stage_1_v);
+	}
+}
+
+Since we need to output only 100 items per map (in order), we can force a single reducer.
+
+But if that were not the case, we'll need a total order partitioner, which sorts by item_id using the item hashmap & some spanning (TBD).
+
+The reduce op will be the average operations with the stage_1_k as the key. 
