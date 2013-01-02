@@ -43,6 +43,7 @@ public class Query27 extends Configured implements Tool {
         in = new Path(remainingArgs[0]);
         out = new Path(remainingArgs[1]);
 
+        long t1 = System.currentTimeMillis();
         Local27 local = new Local27(getConf());
 
         Path[] hashes = local.genHashes(in, new Path("file:///tmp/", uuid));
@@ -56,6 +57,7 @@ public class Query27 extends Configured implements Tool {
         job.setJarByClass(getClass());
 
         job.setMapperClass(Mapjoin.class);
+        job.setCombinerClass(LimitCombiner.class);
         job.setReducerClass(ReduceAverager.class);
         job.setNumReduceTasks(1);
         job.setMapOutputKeyClass(Stage_1_k.class);
@@ -68,7 +70,7 @@ public class Query27 extends Configured implements Tool {
         FileInputFormat.addInputPath(job, new Path(in,"store_sales"));
         FileOutputFormat.setOutputPath(job, out);
 
-        long t1 = System.currentTimeMillis();
+        //long t1 = System.currentTimeMillis();        
         boolean success = job.waitForCompletion(true);
         long t2 = System.currentTimeMillis();
         System.out.println("Run took " + (t2 - t1) + " milliseconds");
@@ -82,11 +84,13 @@ public class Query27 extends Configured implements Tool {
       HashMap<Integer, Integer> date_dim_map;
       HashMap<Integer, String> store_map;
       HashMap<Integer, String> item_map;
+      HashMap<Integer, Boolean> customer_demographics_map;
       protected void setup(Context context) throws IOException {
         try {
           date_dim_map = (HashMap<Integer,Integer>)readFile("date_dim.hash");
           store_map = (HashMap<Integer, String>)readFile("store.hash");
           item_map = (HashMap<Integer, String>)readFile("item.hash");
+          customer_demographics_map = (HashMap<Integer, Boolean>)readFile("customer_demographics.hash");
         } catch(ClassNotFoundException ce) {
           // Integer and String, no worries here
         }
@@ -97,25 +101,78 @@ public class Query27 extends Configured implements Tool {
       }
       protected void map(LongWritable offset, store_sales value, Mapper.Context context) 
         throws IOException, InterruptedException {
-        if(date_dim_map.containsKey(Integer.valueOf(value.ss_sold_date_sk))) {
+        if(date_dim_map.containsKey(Integer.valueOf(value.ss_sold_date_sk)) 
+          && customer_demographics_map.containsKey(Integer.valueOf(value.ss_cdemo_sk))) {
           String s_state = store_map.get(Integer.valueOf(value.ss_store_sk));
           String i_item_id = item_map.get(Integer.valueOf(value.ss_item_sk));
           if(s_state != null && i_item_id != null) {
             k.s_state = s_state;
             k.i_item_id = i_item_id;
+            v.ss_quantity = value.ss_quantity;
+            v.ss_list_price = value.ss_list_price;
+            v.ss_coupon_amt = value.ss_coupon_amt;
+            v.ss_sales_price = value.ss_sales_price;
             context.write(k, v);
           }
         }
       }
     }
 
-    static final class ReduceAverager extends Reducer<Stage_1_k, Stage_1_v, Text, Text> {
-      FileWriter l = null;
+    static final class LimitCombiner extends Reducer<Stage_1_k, Stage_1_v, Stage_1_k, Stage_1_v> {
+      int keys = 0;
+      @Override
+      protected void setup(Context context) throws IOException {
+        keys = 0;
+      }
       @Override
       public void reduce(Stage_1_k key, Iterable<Stage_1_v> values, Context context) 
         throws IOException, InterruptedException {
-        if(l == null) l = new FileWriter("/tmp/reducer.log");
-        l.write(key.toString() + "\n");
+        if(keys > 100) return;
+        keys++;
+        for(Stage_1_v v: values) {
+          context.write(key, v);
+        }
+      }
+    }
+
+    static final class ReduceAverager extends Reducer<Stage_1_k, Stage_1_v, Text, Text> {    
+
+      @Override
+      public void run(Context context) 
+        throws IOException, InterruptedException {
+        // duplicated from the reducer
+        setup(context);
+        for(int i = 0; i < 100 && context.nextKey(); i++) {
+          reduce(context.getCurrentKey(), context.getValues(), context);
+          // If a back up store is used, reset it
+          Iterator<Stage_1_v> iter = context.getValues().iterator();          
+          if(iter instanceof ReduceContext.ValueIterator) {
+            ((ReduceContext.ValueIterator<Stage_1_v>)iter).resetBackupStore();        
+          }
+        }
+        cleanup(context);
+      }
+
+      @Override
+      public void reduce(Stage_1_k key, Iterable<Stage_1_v> values, Context context) 
+        throws IOException, InterruptedException {
+        double sum1 = 0;
+        double sum2 = 0;
+        double sum3 = 0;
+        double sum4 = 0;
+        long count = 0;
+
+        for(Stage_1_v v: values) {
+          sum1 += v.ss_quantity;
+          sum2 += v.ss_list_price;
+          sum3 += v.ss_coupon_amt;
+          sum4 += v.ss_sales_price;
+          count += 1;
+        }
+
+        String outKey = String.format("%s\t%s", key.i_item_id, key.s_state);
+        String outVal = String.format("%f\t%f\t%f\t%f", sum1/count, sum2/count, sum3/count, sum4/count);
+        context.write(new Text(outKey), new Text(outVal));
       }
     }
 }
