@@ -1,0 +1,18 @@
+<configuration>
+     <property>
+         <name>mapreduce.framework.name</name>
+         <value>yarn</value>
+     </property>
+     <property>
+         <name>mapred.job.tracker</name>
+         <value>localhost:8088</value>
+    </property>
+   <!-- <property>
+         <name>io.sort.mb</name>
+         <value>256</value>
+     </property>
+     <property>
+         <name>mrx.engine.io.sort.mb</name>
+         <value>256</value>
+     </property>-->
+</configuration>

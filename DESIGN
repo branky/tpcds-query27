@@ -24,7 +24,7 @@ The format for these will be a primitive based hashtable, which will be used to 
 This will be looped around a map-red where the map op is
 
 if(date_dim.containsKey(store_sales.ss_sold_date_sk) && 
-	customer_demographics.containsKey(store_sales.ss_c_demo_sk))
+	customer_demographics.containsKey(store_sales.ss_cdemo_sk))
 {
 	i_item_id = item.get(store_sales.ss_item_sk);
 	s_state = store.get(store_sales.ss_store_sk);

@@ -12,9 +12,11 @@ import org.apache.hadoop.mapreduce.lib.reduce.*;
 
 
 import java.io.*;
+import java.nio.*;
 import java.util.*;
 
 import org.notmysock.mapjoin.Types.*;
+import org.notmysock.mapjoin.Tables.*;
 
 
 public class Query27 extends Configured implements Tool {
@@ -24,6 +26,9 @@ public class Query27 extends Configured implements Tool {
         int res = ToolRunner.run(conf, new Query27(), args);
         System.exit(res);
     }
+
+    private Path in;
+    private Path out;
 
     @Override
     public int run(String[] args) throws Exception {
@@ -47,10 +52,16 @@ public class Query27 extends Configured implements Tool {
         job.setMapOutputValueClass(Stage_1_v.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        //job.setSortComparatorClass(OrderByComparator.class);
 
-        FileInputFormat.addInputPath(job, new Path(remainingArgs[0]));
-        FileOutputFormat.setOutputPath(job, new Path(remainingArgs[1]));
+        in = new Path(remainingArgs[0]);
+        out = new Path(remainingArgs[1]);
+
+        job.setInputFormatClass(store_sales.InputFormat.class);
+
+        FileInputFormat.addInputPath(job, new Path(in,"store_sales"));
+        FileOutputFormat.setOutputPath(job, out);
+
+        runLocal();
 
         long t1 = System.currentTimeMillis();
         boolean success = job.waitForCompletion(true);
@@ -60,17 +71,19 @@ public class Query27 extends Configured implements Tool {
         return success ? 0 : 1;
     }
 
-    static final class Mapjoin extends Mapper<LongWritable, Text, Stage_1_k, Stage_1_v> {
+    static final class Mapjoin extends Mapper<LongWritable,store_sales, Stage_1_k, Stage_1_v> {
+      Stage_1_k k = new Stage_1_k();
+      Stage_1_v v = new Stage_1_v();
       protected void setup(Context context) throws IOException {
       }
-      protected void map(LongWritable offset, Text value, Mapper.Context context) 
+      protected void map(LongWritable offset, store_sales value, Mapper.Context context) 
         throws IOException, InterruptedException {
-        }
+      }
     }
 
     static final class ReduceAverager extends Reducer<Stage_1_k, Stage_1_v, Text, Text> {
       protected void reduce(Stage_1_k key, Iterator<Stage_1_v> values, Reducer.Context context) 
         throws IOException, InterruptedException {
-        }
+      }
     }
 }
