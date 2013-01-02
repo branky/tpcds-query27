@@ -25,7 +25,7 @@ public class Local27 extends Configured {
   public Local27(Configuration conf) {
     super(new Configuration(conf));
     original = new Configuration(conf);
-    getConf().set("mapred.framework.name", "local");
+    getConf().set("mapreduce.framework.name", "local");
   }
 
   public String resolveFiles(Path[] paths) {
@@ -45,6 +45,7 @@ public class Local27 extends Configured {
     l.add(genDateDim(in, out));
     l.add(genStore(in, out));
     l.add(genItem(in, out));
+    l.add(genCustomerDemographics(in,out));
     return l.toArray(new Path[1]);
   }
 
@@ -157,16 +158,12 @@ public class Local27 extends Configured {
 
   static final class ItemHash extends Mapper<LongWritable, item, Text, Text> {  
     private HashMap<Integer, String> data;
-    private FileWriter fw ;
     protected void setup(Context context) throws IOException {
       data = new HashMap<Integer,String>();      
-    fw = new FileWriter("/tmp/items.log");
     }
     protected void map(LongWritable offset, item value, Mapper.Context context) 
       throws IOException, InterruptedException {
       data.put(Integer.valueOf(value.i_item_sk), value.i_item_id);
-      fw.write(value.i_item_sk+" : " + value.i_item_id+ "\n");
-      fw.flush();
     }
     protected void cleanup(Context context) throws IOException {
       OutputCommitter out = context.getOutputCommitter();
@@ -174,6 +171,50 @@ public class Local27 extends Configured {
         Path dir = ((FileOutputCommitter)out).getWorkPath();
         FileSystem fs = FileSystem.getLocal(context.getConfiguration());        
         ObjectOutputStream dout = new ObjectOutputStream(fs.create(new Path(dir, "item.hash")));
+        dout.writeObject(data);
+        dout.close();
+      }
+    }
+  }
+
+  private Path genCustomerDemographics(Path in, Path out) throws IOException, InterruptedException {
+    Configuration conf = getConf();
+    Job job = new Job(conf, "Query27+customer_demographics");
+    job.setJarByClass(getClass());
+    job.setMapperClass(CustomerDemographicsHash.class);    
+    job.setNumReduceTasks(0);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
+    job.setInputFormatClass(customer_demographics.InputFormat.class);    
+    FileInputFormat.addInputPath(job, new Path(in,"customer_demographics"));
+    FileOutputFormat.setOutputPath(job, new Path(out, "customer_demographics"));
+    try {
+      boolean success = job.waitForCompletion(true);
+    } catch(ClassNotFoundException ce) {
+      return null;
+    }
+    return new Path(new Path(out, "customer_demographics"), "customer_demographics.hash");    
+  }
+
+  static final class CustomerDemographicsHash extends Mapper<LongWritable, customer_demographics, Text, Text> {  
+    private HashMap<Integer, Boolean> data;
+    protected void setup(Context context) throws IOException {
+      data = new HashMap<Integer, Boolean>();      
+    }
+    protected void map(LongWritable offset, customer_demographics value, Mapper.Context context) 
+      throws IOException, InterruptedException {
+      if("M".equals(value.cd_gender) 
+          && "S".equals(value.cd_marital_status) 
+          && "College".equals(value.cd_education_status)) {
+            data.put(Integer.valueOf(value.cd_demo_sk), true);      
+      }
+    }
+    protected void cleanup(Context context) throws IOException {
+      OutputCommitter out = context.getOutputCommitter();
+      if(out instanceof FileOutputCommitter) {
+        Path dir = ((FileOutputCommitter)out).getWorkPath();
+        FileSystem fs = FileSystem.getLocal(context.getConfiguration());        
+        ObjectOutputStream dout = new ObjectOutputStream(fs.create(new Path(dir, "customer_demographics.hash")));
         dout.writeObject(data);
         dout.close();
       }
