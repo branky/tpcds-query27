@@ -22,6 +22,7 @@ import org.notmysock.mapjoin.Tables.*;
 
 public class Local27 extends Configured {
   private Configuration original;
+  private ArrayList<Job> jobs = new ArrayList<Job>();
   public Local27(Configuration conf) {
     super(new Configuration(conf));
     original = new Configuration(conf);
@@ -46,6 +47,12 @@ public class Local27 extends Configured {
     l.add(genStore(in, out));
     l.add(genItem(in, out));
     l.add(genCustomerDemographics(in,out));
+    try {
+      for(Job job: jobs) {
+        job.waitForCompletion(true);
+      }
+    } catch(ClassNotFoundException ce) {
+    }
     return l.toArray(new Path[1]);
   }
 
@@ -61,7 +68,7 @@ public class Local27 extends Configured {
     FileInputFormat.addInputPath(job, new Path(in,"date_dim"));
     FileOutputFormat.setOutputPath(job, new Path(out, "date_dim"));
     try {
-      boolean success = job.waitForCompletion(true);
+      job.submit();jobs.add(job);
     } catch(ClassNotFoundException ce) {
       return null;
     }
@@ -103,7 +110,7 @@ public class Local27 extends Configured {
     FileInputFormat.addInputPath(job, new Path(in,"store"));
     FileOutputFormat.setOutputPath(job, new Path(out, "store"));
     try {
-      boolean success = job.waitForCompletion(true);
+      job.submit();jobs.add(job);
     } catch(ClassNotFoundException ce) {
       return null;
     }
@@ -149,7 +156,7 @@ public class Local27 extends Configured {
     FileInputFormat.addInputPath(job, new Path(in,"item"));
     FileOutputFormat.setOutputPath(job, new Path(out, "item"));
     try {
-      boolean success = job.waitForCompletion(true);
+      job.submit();jobs.add(job);
     } catch(ClassNotFoundException ce) {
       return null;
     }
@@ -189,7 +196,7 @@ public class Local27 extends Configured {
     FileInputFormat.addInputPath(job, new Path(in,"customer_demographics"));
     FileOutputFormat.setOutputPath(job, new Path(out, "customer_demographics"));
     try {
-      boolean success = job.waitForCompletion(true);
+      job.submit();jobs.add(job);
     } catch(ClassNotFoundException ce) {
       return null;
     }
