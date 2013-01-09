@@ -13,3 +13,8 @@ all:
 
 yarn:
 	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config . jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/
+
+yourkit:
+	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config yourkit/ jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/
+
+.PHONY: yourkit
