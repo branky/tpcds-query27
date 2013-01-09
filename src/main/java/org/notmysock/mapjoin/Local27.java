@@ -32,7 +32,7 @@ public class Local27 extends Configured {
     StringBuilder sb = new StringBuilder();
     boolean first = true;
     for(Path p: paths) {
-      String f = p.toUri().getPath();
+      String f = p.toUri().toString();//getPath();
       if(!first) sb.append(",");
       sb.append(f);
       first = false;
