@@ -50,6 +50,10 @@ public class Query27 extends Configured implements Tool {
 
         String tmpfiles = local.resolveFiles(hashes);
 
+        ConverTable convert = new ConverTable(getConf());
+
+        convert.genStoreSalesRc(in);
+
         Configuration conf = getConf();
 
         conf.set("tmpfiles", tmpfiles);
@@ -65,9 +69,13 @@ public class Query27 extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
-        job.setInputFormatClass(store_sales.InputFormat.class);
+        // this is why I inherited store_sales_seq from store_sales
+        //job.setInputFormatClass(store_sales.InputFormat.class);
+        //FileInputFormat.addInputPath(job, new Path(in,"store_sales"));
 
-        FileInputFormat.addInputPath(job, new Path(in,"store_sales"));
+        job.setInputFormatClass(store_sales_seq.InputFormat.class);
+
+        FileInputFormat.addInputPath(job, new Path(in,"store_sales_seq"));
         FileOutputFormat.setOutputPath(job, out);
 
         //long t1 = System.currentTimeMillis();        

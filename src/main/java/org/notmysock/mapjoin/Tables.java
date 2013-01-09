@@ -271,15 +271,83 @@ public class Tables extends Utils {
     }
   }
 
-  public static final class store_sales {
-    int ss_sold_date_sk; // 0
-    int ss_item_sk; // 2
-    int ss_cdemo_sk; // 4
-    int ss_store_sk; // 7
-    int ss_quantity; // 10
-    float ss_list_price; // 12
-    float ss_sales_price; // 13
-    float ss_coupon_amt; // 19
+  public static class store_sales implements Writable {
+    int ss_sold_date_sk;
+    int ss_sold_time_sk;
+    int ss_item_sk;
+    int ss_customer_sk;
+    int ss_cdemo_sk;
+    int ss_hdemo_sk;
+    int ss_addr_sk;
+    int ss_store_sk;
+    int ss_promo_sk;
+    int ss_ticket_number;
+    int ss_quantity;
+    float ss_wholesale_cost;
+    float ss_list_price;
+    float ss_sales_price;
+    float ss_ext_discount_amt;
+    float ss_ext_sales_price;
+    float ss_ext_wholesale_cost;
+    float ss_ext_list_price;
+    float ss_ext_tax;
+    float ss_coupon_amt;
+    float ss_net_paid;
+    float ss_net_paid_inc_tax;
+    float ss_net_profit;
+    
+    public void write(DataOutput out) throws IOException {
+      out.writeInt(ss_sold_date_sk);
+      out.writeInt(ss_sold_time_sk);
+      out.writeInt(ss_item_sk);
+      out.writeInt(ss_customer_sk);
+      out.writeInt(ss_cdemo_sk);
+      out.writeInt(ss_hdemo_sk);
+      out.writeInt(ss_addr_sk);
+      out.writeInt(ss_store_sk);
+      out.writeInt(ss_promo_sk);
+      out.writeInt(ss_ticket_number);
+      out.writeInt(ss_quantity);
+      out.writeFloat(ss_wholesale_cost);
+      out.writeFloat(ss_list_price);
+      out.writeFloat(ss_sales_price);
+      out.writeFloat(ss_ext_discount_amt);
+      out.writeFloat(ss_ext_sales_price);
+      out.writeFloat(ss_ext_wholesale_cost);
+      out.writeFloat(ss_ext_list_price);
+      out.writeFloat(ss_ext_tax);
+      out.writeFloat(ss_coupon_amt);
+      out.writeFloat(ss_net_paid);
+      out.writeFloat(ss_net_paid_inc_tax);
+      out.writeFloat(ss_net_profit);
+    }
+
+    public void readFields(DataInput in) throws IOException {
+      this.ss_sold_date_sk = in.readInt();
+      this.ss_sold_time_sk = in.readInt();
+      this.ss_item_sk = in.readInt();
+      this.ss_customer_sk = in.readInt();
+      this.ss_cdemo_sk = in.readInt();
+      this.ss_hdemo_sk = in.readInt();
+      this.ss_addr_sk = in.readInt();
+      this.ss_store_sk = in.readInt();
+      this.ss_promo_sk = in.readInt();
+      this.ss_ticket_number = in.readInt();
+      this.ss_quantity = in.readInt();
+      this.ss_wholesale_cost = in.readFloat();
+      this.ss_list_price = in.readFloat();
+      this.ss_sales_price = in.readFloat();
+      this.ss_ext_discount_amt = in.readFloat();
+      this.ss_ext_sales_price = in.readFloat();
+      this.ss_ext_wholesale_cost = in.readFloat();
+      this.ss_ext_list_price = in.readFloat();
+      this.ss_ext_tax = in.readFloat();
+      this.ss_coupon_amt = in.readFloat();
+      this.ss_net_paid = in.readFloat();
+      this.ss_net_paid_inc_tax = in.readFloat();
+      this.ss_net_profit = in.readFloat();
+    }
+
 
     public static final class InputFormat 
       extends FileInputFormat<LongWritable, store_sales> {
@@ -320,28 +388,28 @@ public class Tables extends Utils {
         String [] pieces = lineValue.toString().split("\\|");
 
         switch(pieces.length-1) {        
-          case 22:// value.ss_net_profit = parseFloat(pieces[22]);
-          case 21:// value.ss_net_paid_inc_tax = parseFloat(pieces[21]);
-          case 20:// value.ss_net_paid = parseFloat(pieces[20]);
+          case 22: value.ss_net_profit = parseFloat(pieces[22]);
+          case 21: value.ss_net_paid_inc_tax = parseFloat(pieces[21]);
+          case 20: value.ss_net_paid = parseFloat(pieces[20]);
           case 19: value.ss_coupon_amt = parseFloat(pieces[19]);
-          case 18:// value.ss_ext_tax = parseFloat(pieces[18]);
-          case 17:// value.ss_ext_list_price = parseFloat(pieces[17]);
-          case 16:// value.ss_ext_wholesale_cost = parseFloat(pieces[16]);
-          case 15:// value.ss_ext_sales_price = parseFloat(pieces[15]);
-          case 14:// value.ss_ext_discount_amt = parseFloat(pieces[14]);
+          case 18: value.ss_ext_tax = parseFloat(pieces[18]);
+          case 17: value.ss_ext_list_price = parseFloat(pieces[17]);
+          case 16: value.ss_ext_wholesale_cost = parseFloat(pieces[16]);
+          case 15: value.ss_ext_sales_price = parseFloat(pieces[15]);
+          case 14: value.ss_ext_discount_amt = parseFloat(pieces[14]);
           case 13: value.ss_sales_price = parseFloat(pieces[13]);
           case 12: value.ss_list_price = parseFloat(pieces[12]);
-          case 11:// value.ss_wholesale_cost = parseFloat(pieces[11]);
+          case 11: value.ss_wholesale_cost = parseFloat(pieces[11]);
           case 10: value.ss_quantity = parseInt(pieces[10]);
-          case 9:// value.ss_ticket_number = parseInt(pieces[9]);
-          case 8:// value.ss_promo_sk = parseInt(pieces[8]);
+          case 9: value.ss_ticket_number = parseInt(pieces[9]);
+          case 8: value.ss_promo_sk = parseInt(pieces[8]);
           case 7: value.ss_store_sk = parseInt(pieces[7]);
-          case 6:// value.ss_addr_sk = parseInt(pieces[6]);
-          case 5:// value.ss_hdemo_sk = parseInt(pieces[5]);
+          case 6: value.ss_addr_sk = parseInt(pieces[6]);
+          case 5: value.ss_hdemo_sk = parseInt(pieces[5]);
           case 4: value.ss_cdemo_sk = parseInt(pieces[4]);
-          case 3:// value.ss_customer_sk = parseInt(pieces[3]);
+          case 3: value.ss_customer_sk = parseInt(pieces[3]);
           case 2: value.ss_item_sk = parseInt(pieces[2]);
-          case 1:// value.ss_sold_time_sk = parseInt(pieces[1]);
+          case 1: value.ss_sold_time_sk = parseInt(pieces[1]);
           case 0: value.ss_sold_date_sk = parseInt(pieces[0]);
         }
         return true;
@@ -353,6 +421,60 @@ public class Tables extends Utils {
 
       public float getProgress() throws IOException {
         return lineReader.getProgress();
+      }
+    }
+  }
+
+  // there is no reason for inheritance, I'm merely saving typing
+  public static final class store_sales_seq extends store_sales {
+    public static final class InputFormat 
+      extends SequenceFileInputFormat<LongWritable, store_sales_seq> {
+      @Override
+      public RecordReader<LongWritable,store_sales_seq> createRecordReader(InputSplit input,  TaskAttemptContext context)
+          throws IOException {          
+        try {
+          RecordReader<LongWritable, store_sales_seq> reader =  new store_sales_seq.Reader();
+          reader.initialize(input, context);
+          return reader;
+        } catch(InterruptedException ie) {
+        }
+        return null;
+      }
+    }
+
+    public static final class Reader extends RecordReader<LongWritable,store_sales_seq> {
+      private SequenceFileRecordReader seqReader;
+      private LongWritable key = new LongWritable();
+      private store_sales_seq value = new store_sales_seq();
+
+      public Reader() {
+        seqReader = new SequenceFileRecordReader<LongWritable,store_sales_seq>();
+      }
+      
+      public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+        seqReader.initialize(split, context);
+      }
+
+      public LongWritable getCurrentKey() { return key; }
+      public store_sales_seq getCurrentValue() { return value; }
+
+      public boolean nextKeyValue() throws IOException, InterruptedException {
+        // get the next line
+        if (!seqReader.nextKeyValue()) {
+          return false;
+        }
+        LongWritable lineKey = (LongWritable)seqReader.getCurrentKey();
+        key.set(lineKey.get());
+        value = (store_sales_seq)seqReader.getCurrentValue();
+        return true;
+      }
+
+      public void close() throws IOException {
+        seqReader.close();
+      }
+
+      public float getProgress() throws IOException {
+        return seqReader.getProgress();
       }
     }
   }
