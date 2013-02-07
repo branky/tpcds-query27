@@ -27,6 +27,7 @@ public class Local27 extends Configured {
     super(new Configuration(conf));
     original = new Configuration(conf);
     getConf().set("mapreduce.framework.name", "local");
+    getConf().set("mapreduce.jobtracker.address", "local");
   }
 
   public String resolveFiles(Path[] paths) {
