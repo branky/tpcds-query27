@@ -12,9 +12,9 @@ all:
 	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/
 
 yarn:
-	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config . jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/
+	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config . jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/ $(OPTS)
 
 yourkit:
-	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config yourkit/ jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/
+	$(EXPORTS); $(HADOOP_HOME)/bin/hadoop --config yourkit/ jar target/mapjoin-bench-1.0-SNAPSHOT.jar file:///tmp/hive/tpcds/ file:///tmp/q27.$(RANDOM)/ $(OPTS)
 
 .PHONY: yourkit

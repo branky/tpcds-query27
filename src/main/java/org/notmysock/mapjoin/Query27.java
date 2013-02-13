@@ -5,15 +5,16 @@ import org.apache.hadoop.fs.*;
 import org.apache.hadoop.hdfs.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.util.*;
+import org.apache.hadoop.filecache.*;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.*;
 import org.apache.hadoop.mapreduce.lib.output.*;
 import org.apache.hadoop.mapreduce.lib.reduce.*;
 
-
 import java.io.*;
 import java.nio.*;
 import java.util.*;
+import java.net.*;
 
 import org.notmysock.mapjoin.Types.*;
 import org.notmysock.mapjoin.Tables.*;
@@ -29,16 +30,24 @@ public class Query27 extends Configured implements Tool {
 
     private Path in;
     private Path out;
+    private boolean distCache = false;
 
     @Override
     public int run(String[] args) throws Exception {
         String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
 
         if (remainingArgs.length < 2) {
-            System.err.println("Usage: Query27 <in> <out>");
+            System.err.println("Usage: Query27 <in> <out> [-distcache]");
             ToolRunner.printGenericCommandUsage(System.err);
             return 1;
         }
+
+        if(remainingArgs.length == 3) {
+          if(remainingArgs[2].equals("-distcache")) {
+            distCache = true;
+          }
+        }
+
         String uuid = UUID.randomUUID().toString(); 
         in = new Path(remainingArgs[0]);
         out = new Path(remainingArgs[1]);
@@ -46,17 +55,23 @@ public class Query27 extends Configured implements Tool {
         long t1 = System.currentTimeMillis();
         Local27 local = new Local27(getConf());
 
-        Path[] hashes = local.genHashes(in, new Path("file:///tmp/", uuid));
-
-        String tmpfiles = local.resolveFiles(hashes);
-
         ConverTable convert = new ConverTable(getConf());
 
         convert.genStoreSalesRc(in);
 
         Configuration conf = getConf();
 
-        conf.set("tmpfiles", tmpfiles);
+        if(distCache) {
+          DistributedCache.addCacheFile((new Path(in, "item/")).toUri(), conf);
+          DistributedCache.addCacheFile((new Path(in, "date_dim/")).toUri(), conf);
+          DistributedCache.addCacheFile((new Path(in, "store/")).toUri(), conf);
+          DistributedCache.addCacheFile((new Path(in, "customer_demographics/")).toUri(), conf);
+        } else {
+          Path[] hashes = local.genHashes(in, new Path("file:///tmp/", uuid));
+          String tmpfiles = local.resolveFiles(hashes);
+          conf.set("tmpfiles", tmpfiles);
+        }
+
         Job job = new Job(conf, "Query27");
         job.setJarByClass(getClass());
 
@@ -69,7 +84,7 @@ public class Query27 extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
-        // this is why I inherited store_sales_seq from store_sales
+        //this is why I inherited store_sales_seq from store_sales
         //job.setInputFormatClass(store_sales.InputFormat.class);
         //FileInputFormat.addInputPath(job, new Path(in,"store_sales"));
 
@@ -94,13 +109,21 @@ public class Query27 extends Configured implements Tool {
       HashMap<Integer, String> item_map;
       HashMap<Integer, Boolean> customer_demographics_map;
       protected void setup(Context context) throws IOException {
-        try {
-          date_dim_map = (HashMap<Integer,Integer>)readFile("date_dim.hash");
-          store_map = (HashMap<Integer, String>)readFile("store.hash");
-          item_map = (HashMap<Integer, String>)readFile("item.hash");
-          customer_demographics_map = (HashMap<Integer, Boolean>)readFile("customer_demographics.hash");
-        } catch(ClassNotFoundException ce) {
-          // Integer and String, no worries here
+        if(new File("date_dim.hash").exists()) {
+          try {
+            date_dim_map = (HashMap<Integer,Integer>)readFile("date_dim.hash");
+            store_map = (HashMap<Integer, String>)readFile("store.hash");
+            item_map = (HashMap<Integer, String>)readFile("item.hash");
+            customer_demographics_map = (HashMap<Integer, Boolean>)readFile("customer_demographics.hash");
+          } catch(ClassNotFoundException ce) {
+            // Integer and String, no worries here
+          }
+        } else {
+          Cache27 cached = new Cache27();
+          date_dim_map = cached.genDateDim(context);
+          store_map = cached.genStore(context);
+          item_map = cached.genItem(context);
+          customer_demographics_map = cached.genCustomerDemographics(context);
         }
       }
       private Object readFile(String hashFile) throws IOException, ClassNotFoundException {
